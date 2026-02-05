@@ -1,0 +1,8 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sPSPRunAsNonRoot
+metadata:
+  name: nist-least-privilege
+spec:
+  match:
+    kinds:
+      - kinds: ["Pod"]

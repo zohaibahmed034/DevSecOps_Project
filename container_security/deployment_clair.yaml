@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clair
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: clair
+  template:
+    metadata:
+      labels:
+        app: clair
+    spec:
+      containers:
+      - name: clair
+        image: quay.io/projectquay/clair:v4.7.2
+        ports:
+        - containerPort: 8080
+        - containerPort: 6060
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        env:
+        - name: CLAIR_CONF
+          value: /config/config.yaml
+        - name: CLAIR_MODE
+          value: combo
+      volumes:
+      - name: config
+        configMap:
+          name: clair-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clair-svc
+spec:
+  type: NodePort       # Ye cluster ke bahar access dega
+  ports:
+    - port: 8080       # Service Port
+      targetPort: 8080 # Container Port
+      nodePort: 30008  # Is port par aap Jenkins se connect karenge
+  selector:
+    app: clair

@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: clair-config
+data:
+  config.yaml: |
+    introspection_addr: :6060
+    http_listen_addr: :8080
+    loglevel: debug
+    indexer:
+      connstring: host=clair-db port=5432 user=postgres password=password dbname=clair sslmode=disable
+      scanlock_retry: 10
+      layer_scan_concurrency: 5
+    matcher:
+      connstring: host=clair-db port=5432 user=postgres password=password dbname=clair sslmode=disable
+      max_conn_pool: 100
+    notifier:
+      connstring: host=clair-db port=5432 user=postgres password=password dbname=clair sslmode=disable
+      delivery_interval: 1m
+

@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: soc2-violation-pod
+spec:
+  containers:
+  - name: greedy-container
+    image: nginx
+    # Yahan resources: limits missing hain

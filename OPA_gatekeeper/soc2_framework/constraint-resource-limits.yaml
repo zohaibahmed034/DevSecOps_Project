@@ -1,0 +1,11 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequiredResourceLimits
+metadata:
+  name: soc2-resource-limits
+spec:
+  match:
+    kinds:
+      - kinds: ["Pod"]
+  parameters:
+    cpu: "500m"
+    memory: "512Mi"

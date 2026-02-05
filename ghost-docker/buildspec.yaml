@@ -1,0 +1,28 @@
+version: 0.2
+
+env:
+  variables:
+    IMAGE_NAME: ghost-docker
+    ECR_REPO: 190219743432.dkr.ecr.ap-south-1.amazonaws.com/ghost-docker
+    REGION: ap-south-1
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws --version
+      - aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin $ECR_REPO
+
+  build:
+    commands:
+      - echo Building the Docker image...
+      - docker build -t $IMAGE_NAME .
+
+      # Tag the image for ECR
+      - docker tag $IMAGE_NAME:latest $ECR_REPO:latest
+
+  post_build:
+    commands:
+      - echo Pushing the Docker image to ECR...
+      - docker push $ECR_REPO:latest
+      - echo Build and push completed successfully!

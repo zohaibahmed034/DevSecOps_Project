@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ghost-config
+data:
+  database__client: mysql
+  database__connection__host: db
+  database__connection__user: root
+  url: http://65.0.230.242:30005

@@ -1,0 +1,14 @@
+# 2. Ghost Application Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: ghost-service
+spec:
+  type: NodePort       # Taake hum browser se access kar sakein
+  ports:
+    - port: 2368       # Service Port
+      targetPort: 2368 # Pod Port
+      nodePort: 30005  # Browser Port (Aapki IP:30005)
+  selector:
+    app: ghost
+

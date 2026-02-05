@@ -1,0 +1,57 @@
+{
+	$schema: "https://docs.renovatebot.com/renovate-schema.json",
+	extends: [
+		"config:best-practices",
+		":disableRateLimiting",
+		":automergeBranch",
+		":pinDependencies",
+		":separatePatchReleases",
+	],
+	suppressNotifications: ["prIgnoreNotification"],
+	packageRules: [
+		{
+			description: "Group ActivityPub containers together",
+			matchDatasources: ["docker", "github-tags", "docker-compose"],
+			matchPackageNames: [
+				"ghcr.io/tryghost/activitypub",
+				"ghcr.io/tryghost/activitypub-migrations",
+			],
+			groupName: "ActivityPub",
+			groupSlug: "activitypub",
+			additionalBranchPrefix: "",
+			separateMinorPatch: false,
+		},
+		{
+			description: "Auto-merge initial digest pinning",
+			matchDatasources: ["docker", "github-tags"],
+			matchUpdateTypes: ["pinDigest"],
+			automerge: true,
+		},
+		{
+			description: "Auto-merge trusted package updates",
+			matchDatasources: ["docker", "docker-compose", "github-tags"],
+			matchUpdateTypes: ["minor", "patch"],
+			matchPackageNames: [
+				"ghost/traffic-analytics",
+				"ghcr.io/tryghost/activitypub",
+				"ghcr.io/tryghost/activitypub-migrations",
+			],
+			automerge: true,
+		},
+		// We don't need to pin the Ghost image since its pulled via env variables
+		{
+			description: "Don't pin Ghost image",
+			matchDatasources: ["docker", "docker-compose"],
+			matchPackageNames: [
+				"ghost",
+			],
+			pinDigests: false,
+		},
+		{
+			description: "Restrict MySQL to patch updates only within 8.0",
+			matchDatasources: ["docker", "docker-compose"],
+			matchPackageNames: ["mysql"],
+			allowedVersions: "~8.0",
+		},
+	],
+}

@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clair-db
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: clair-db
+  template:
+    metadata:
+      labels:
+        app: clair-db
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:12-alpine
+        env:
+        - name: POSTGRES_PASSWORD
+          value: "password"
+        - name: POSTGRES_DB
+          value: "clair"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 5432
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clair-db
+  namespace: default
+spec:
+  ports:
+    - port: 5432
+  selector:
+    app: clair-db

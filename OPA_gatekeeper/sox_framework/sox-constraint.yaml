@@ -1,0 +1,8 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sReadOnlyRootFilesystem
+metadata:
+  name: sox-data-integrity
+spec:
+  match:
+    kinds:
+      - kinds: ["Pod"]

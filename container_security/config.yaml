@@ -1,0 +1,8 @@
+introspection_addr: :6060
+http_listen_addr: :8080
+log_level: debug
+indexer:
+  connstring: host=clair-db port=5432 user=clair password=password dbname=clair sslmode=disable
+  scanlock_retry: 10
+matcher:
+  connstring: host=clair-db port=5432 user=clair password=password dbname=clair sslmode=disable
