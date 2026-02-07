@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: devsecops
+spec:
+  ports:
+    - port: 5432
+  selector:
+    app: clair-db
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clair-api
+  namespace: devsecops
+spec:
+  type: NodePort  # Yahan NodePort add kiya
+  ports:
+    - port: 6060
+      targetPort: 6060
+      nodePort: 30060  # Is port par aap bahar se access kar sakenge
+      name: api
+    - port: 6061
+      targetPort: 6061
+      nodePort: 30061
+      name: health
+  selector:
+    app: clair-api
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clair-db
+  namespace: devsecops
+spec:
+  selector:
+    matchLabels:
+      app: clair-db
+  template:
+    metadata:
+      labels:
+        app: clair-db
+    spec:
+      containers:
+      - name: postgres
+        image: arminc/clair-db:latest
+        env:
+        - name: POSTGRES_PASSWORD
+          value: "password"
+        ports:
+        - containerPort: 5432
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clair-api
+  namespace: devsecops
+spec:
+  selector:
+    matchLabels:
+      app: clair-api
+  template:
+    metadata:
+      labels:
+        app: clair-api
+    spec:
+      containers:
+      - name: clair-api
+        image: arminc/clair-local-scan:latest
+        ports:
+        - containerPort: 6060
+        - containerPort: 6061
