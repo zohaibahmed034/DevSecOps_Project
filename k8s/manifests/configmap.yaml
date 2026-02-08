@@ -4,6 +4,5 @@ metadata:
   name: ghost-config
 data:
   database__client: mysql
-  database__connection__host: db
-  database__connection__user: root
+  database__connection__host: mysql-service # DB service ka naam
   url: http://65.0.230.242:30005

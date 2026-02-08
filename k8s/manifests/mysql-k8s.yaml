@@ -27,10 +27,11 @@ spec:
         ports:
         - containerPort: 3306
         env:
+        # Ye Secret 'ExternalSecret' operator khud banayega Vault se data le kar
         - name: MYSQL_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:
-              name: ghost-secrets # Jo humne secret banaya tha
+              name: ghost-secrets
               key: mysql-root-password
         - name: MYSQL_DATABASE
           valueFrom:
