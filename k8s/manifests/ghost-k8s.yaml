@@ -17,13 +17,18 @@ spec:
         image: zuhaibahmed034/ghost-devsecops:v1
         ports:
         - containerPort: 2368
-        envFrom:
-        - configMapRef:
-            name: ghost-config
-        - secretRef:
-            name: ghost-secrets # <--- Is se ARGO, GITHUB, DB_PASS sab mil jayenge
         env:
-        # Ghost specifically looks for this variable name for DB password
+        - name: database__client
+          value: "mysql"
+        - name: database__connection__host
+          value: "db" # MySQL Service name
+        - name: database__connection__user
+          value: "root"
+        - name: database__connection__database
+          valueFrom:
+            secretKeyRef:
+              name: ghost-secrets
+              key: mysql-database
         - name: database__connection__password
           valueFrom:
             secretKeyRef:
