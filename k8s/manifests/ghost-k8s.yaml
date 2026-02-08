@@ -21,4 +21,11 @@ spec:
         - configMapRef:
             name: ghost-config
         - secretRef:
-            name: ghost-secrets # ESO ne jo secret banaya uski keys auto-inject ho jayengi
+            name: ghost-secrets # <--- Is se ARGO, GITHUB, DB_PASS sab mil jayenge
+        env:
+        # Ghost specifically looks for this variable name for DB password
+        - name: database__connection__password
+          valueFrom:
+            secretKeyRef:
+              name: ghost-secrets
+              key: mysql-root-password

@@ -27,7 +27,6 @@ spec:
         ports:
         - containerPort: 3306
         env:
-        # Ye Secret 'ExternalSecret' operator khud banayega Vault se data le kar
         - name: MYSQL_ROOT_PASSWORD
           valueFrom:
             secretKeyRef:

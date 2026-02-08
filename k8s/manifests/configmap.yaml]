@@ -4,5 +4,6 @@ metadata:
   name: ghost-config
 data:
   database__client: mysql
-  database__connection__host: db  # <--- Isay 'mysql-devsecops' se badal kar 'db' kar dein
+  database__connection__host: db
+  database__connection__database: ghost_db  # <--- Yeh line missing thi!
   url: http://100.24.125.225:30005
