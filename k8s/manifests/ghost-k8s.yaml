@@ -19,9 +19,15 @@ spec:
         - containerPort: 2368
         env:
         - name: database__client
-          value: "mysql"
+          valueFrom:
+            configMapKeyRef:
+              name: ghost-config
+              key: database__client
         - name: database__connection__host
-          value: "db" # MySQL Service name
+          valueFrom:
+            configMapKeyRef:
+              name: ghost-config
+              key: database__connection__host
         - name: database__connection__user
           value: "root"
         - name: database__connection__database

@@ -27,3 +27,13 @@ spec:
             secretKeyRef:
               name: ghost-secrets
               key: mysql-database
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: db
+spec:
+  ports:
+    - port: 3306
+  selector:
+    app: mysql
