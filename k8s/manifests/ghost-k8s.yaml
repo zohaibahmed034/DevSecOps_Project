@@ -36,7 +36,8 @@ spec:
       containers:
       - name: ghost
         image: zuhaibahmed034/ghost-devsecops:v1
-        command: ["sh", "-c", "source /vault/secrets/config.env && node current/index.js"]
+        # "source" ki jagah "." use karein jo har shell mein chalta hai
+        command: ["sh", "-c", ". /vault/secrets/config.env && node current/index.js"]
         ports:
         - containerPort: 2368
         env:
