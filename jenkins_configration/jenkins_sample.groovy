@@ -1,7 +1,7 @@
 pipeline {
     agent {
         kubernetes {
-    yaml """
+            yaml """
 apiVersion: v1
 kind: Pod
 spec:
@@ -18,7 +18,7 @@ spec:
       runAsUser: 0
     volumeMounts:
     - name: report-storage
-      mountPath: /reports-dir
+      mountPath: /var/reports-dir
     - name: odc-data
       mountPath: /usr/share/dependency-check/data
   - name: checkov
@@ -29,28 +29,28 @@ spec:
       runAsUser: 0
     volumeMounts:
     - name: report-storage
-      mountPath: /reports-dir
+      mountPath: /var/reports-dir
   - name: trivy
     image: aquasec/trivy:latest
     command: ['cat']
     tty: true
     volumeMounts:
     - name: report-storage
-      mountPath: /reports-dir
+      mountPath: /var/reports-dir
   - name: snyk
     image: snyk/snyk:alpine
     command: ['cat']
     tty: true
     volumeMounts:
     - name: report-storage
-      mountPath: /reports-dir
+      mountPath: /var/reports-dir
   - name: python-risk
     image: python:3.9-slim
     command: ['cat']
     tty: true
     volumeMounts:
     - name: report-storage
-      mountPath: /reports-dir
+      mountPath: /var/reports-dir
   - name: docker-daemon
     image: docker:24.0.7-dind
     securityContext:
@@ -67,18 +67,18 @@ spec:
       value: "tcp://localhost:2375"
     volumeMounts:
     - name: report-storage
-      mountPath: /reports-dir
+      mountPath: /var/reports-dir
   - name: tools
     image: alpine:3.18
     command: ['cat']
     tty: true
     volumeMounts:
     - name: report-storage
-      mountPath: /reports-dir
+      mountPath: /var/reports-dir
   volumes:
   - name: report-storage
     hostPath:
-      path: /var/devsecops-reports
+      path: /var/reports-dir
       type: DirectoryOrCreate
   - name: odc-data
     hostPath:
@@ -91,16 +91,12 @@ spec:
     environment {
         REPO_NAME        = "zohaibahmed034/DevSecOps_Project"
         DOCKER_IMAGE_TAG = "v1"
-        REPORT_DIR       = "/reports-dir"
         SONAR_URL        = "http://44.195.24.196:32353"
         CLAIR_URL        = "http://clair-api.devsecops.svc.cluster.local:6060"
-        ARGO_SERVER      = "44.195.24.196:31436"
-        APP_NAME         = "devsecops-project"
-        REPO_URL         = "https://github.com/zohaibahmed034/DevSecOps_Project.git"
-        MANIFESTS        = "k8s/manifests"
-        ARGOCD_BIN       = "${WORKSPACE}/argocd"
         VAULT_ADDR       = "http://44.195.24.196:30853"
-        VAULT_CONFIG     = "vaultUrl: '${env.VAULT_ADDR}', vaultCredentialId: 'vault-root-token', engineVersion: 2"
+        DOCKER_USER      = "zuhaibahmed034"
+        IMAGES           = "ghost-devsecops,mysql-devsecops"
+        REPORT_DIR       = "/var/reports-dir/build-${env.BUILD_NUMBER}" 
     }
 
     stages {
@@ -153,7 +149,7 @@ spec:
                     steps {
                         container('owasp-check') {
                             script {
-                                def secrets = [[path: 'secret/devsecops/creds', secretValues: [[envVar: 'NVD_API_KEY', vaultKey: 'nvd_key']]]]
+                                def secrets = [[path: 'secret/devsecops/creds', secretValues: [[envVar: 'NVD_API_KEY', vaultKey: 'nvd_api_key']]]]
                                 withVault(configuration: [vaultUrl: "${VAULT_ADDR}", vaultCredentialId: 'vault-root-token', engineVersion: 2], vaultSecrets: secrets) {
                                     sh """
                                         /usr/share/dependency-check/bin/dependency-check.sh \
@@ -260,6 +256,58 @@ spec:
                 }
             }
         }
+        stage('Step 5.1: Image Signing & SLSA Attestation') {
+            steps {
+                script {
+                    def secrets = [[
+                        path: 'secret/devsecops/creds', 
+                        engineVersion: 2, 
+                        secretValues: [
+                            [envVar: 'COSIGN_KEY',      vaultKey: 'cosign_private_key'],
+                            [envVar: 'COSIGN_PUB',      vaultKey: 'cosign_public_key'],
+                            [envVar: 'COSIGN_PASSWORD', vaultKey: 'cosign_password'],
+                            [envVar: 'D_PASS',          vaultKey: 'docker_pass']
+                        ]
+                    ]]
+        
+                    withVault(configuration: [vaultUrl: "${VAULT_ADDR}", vaultCredentialId: 'vault-root-token', engineVersion: 2], vaultSecrets: secrets) {
+                        container('scanner') {
+                            sh """
+                                # Cosign Install if not exists
+                                if ! command -v cosign &> /dev/null; then
+                                    curl -L https://github.com/sigstore/cosign/releases/latest/download/cosign-linux-amd64 -o /usr/local/bin/cosign
+                                    chmod +x /usr/local/bin/cosign
+                                fi
+                                
+                                echo '${env.COSIGN_KEY}' > cosign.key
+                                echo '${env.COSIGN_PUB}' > cosign.pub
+                                
+                                # Docker Login (Rate limit se bachne ke liye)
+                                echo "${env.D_PASS}" | docker login -u "${env.DOCKER_USER}" --password-stdin
+                            """
+                            
+                            def imageList = env.IMAGES.split(',')
+                            for (imgName in imageList) {
+                                def fullImage = "${env.DOCKER_USER}/${imgName}:${env.DOCKER_IMAGE_TAG}"
+                                
+                                sh """
+                                    export COSIGN_PASSWORD=${env.COSIGN_PASSWORD}
+                                    
+                                    # Rate limit hit hone ki surat mein retry logic
+                                    for i in {1..3}; do
+                                        cosign sign --key cosign.key ${fullImage} --yes && break || sleep 60
+                                    done
+        
+                                    # Baki steps (Attest & Verify)...
+                                    cosign verify --key cosign.pub ${fullImage} --insecure-ignore-tlog > ${env.REPORT_DIR}/${imgName}-cosign-verify.txt
+                                """
+                            }
+                            sh "rm -f cosign.key cosign.pub"
+                        }
+                    }
+                }
+            }
+        }
 
         stage('Step 6: Smart Deploy & Validation') {
             steps {
@@ -299,20 +347,47 @@ spec:
             }
         }
 
-        stage('Final Release') {
+        stage('Final Release & GitHub Assets') {
             steps {
-                container('tools') {
+                // 'scanner' ya 'tools' dono mein se koi bhi container use kar sakte hain
+                container('scanner') { 
                     script {
-                        def secrets = [[path: 'secret/devsecops/creds', secretValues: [[envVar: 'GITHUB_TOKEN', vaultKey: 'github_token']]]]
-                        withVault(configuration: [vaultUrl: "${VAULT_ADDR}", vaultCredentialId: 'vault-root-token', engineVersion: 2], vaultSecrets: secrets) {
-                            def releaseTag = "Build-${env.BUILD_NUMBER}"
-                            sh """
-                                apk add --no-cache curl zip
-                                zip -r reports.zip ${env.REPORT_DIR}/*.json ${env.REPORT_DIR}/*.txt || true
-                                RESPONSE=\$(curl -s -X POST -H "Authorization: token ${env.GITHUB_TOKEN}" -d '{"tag_name":"${releaseTag}","name":"Release ${releaseTag}"}' "https://api.github.com/repos/${env.REPO_NAME}/releases")
-                                RELEASE_ID=\$(echo \$RESPONSE | grep -oP '"id":\\s*\\K\\d+' | head -n 1)
-                                curl -X POST -H "Authorization: token ${env.GITHUB_TOKEN}" -H "Content-Type: application/zip" --data-binary @"reports.zip" "https://uploads.github.com/repos/${env.REPO_NAME}/releases/\$RELEASE_ID/assets?name=security-reports.zip"
-                            """
+                        def secrets = [[
+                            path: 'secret/devsecops/creds', 
+                            engineVersion: 2, 
+                            secretValues: [[envVar: 'GH_TOKEN', vaultKey: 'github_token']]
+                        ]]
+                        
+                        withVault(configuration: [vaultUrl: "${VAULT_ADDR}", vaultCredentialId: 'vault-root-token'], vaultSecrets: secrets) {
+                            sh '''
+                                # 1. Tools Install (Alpine image check)
+                                if ! command -v gh &> /dev/null || ! command -v zip &> /dev/null; then
+                                    apk add --no-cache zip github-cli
+                                fi
+        
+                                export GITHUB_TOKEN=$GH_TOKEN
+                                TAG="v1.0.${BUILD_NUMBER}"
+                                ZIP_NAME="all-security-reports-build-${BUILD_NUMBER}.zip"
+        
+                                # 2. Zip Reports
+                                if [ -d "${REPORT_DIR}" ]; then
+                                    cd ${REPORT_DIR} && zip -r ../$ZIP_NAME . && cd ..
+                                else
+                                    echo "Reports directory not found!" && exit 1
+                                fi
+                                
+                                # 3. The 422 Fix: Clean and Atomic Create
+                                echo "Deleting old release if exists to avoid 422 error..."
+                                gh release delete "$TAG" --repo "$REPO_NAME" --yes || echo "Clean start."
+        
+                                echo "Creating release and uploading assets in one command..."
+                                gh release create "$TAG" "$ZIP_NAME" \
+                                    --title "DevSecOps Release - Build #${BUILD_NUMBER}" \
+                                    --notes "Automated Security Reports for Build #${BUILD_NUMBER}" \
+                                    --repo "$REPO_NAME"
+                                
+                                echo "Successfully uploaded assets to GitHub!"
+                            '''
                         }
                     }
                 }
