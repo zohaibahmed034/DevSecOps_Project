@@ -1,0 +1,22 @@
+# 1. Action definition
+apiVersion: falcotalon.io/v1alpha1
+kind: Action
+metadata:
+  name: terminate-pod
+  namespace: falco
+spec:
+  actioner: kubernetes:terminate
+  parameters:
+    grace_period_seconds: 0
+---
+# 2. Rule definition
+apiVersion: falcotalon.io/v1alpha1
+kind: Rule
+metadata:
+  name: kill-threat-pod
+  namespace: falco
+spec:
+  action: terminate-pod
+  condition:
+    priority: ">= Critical"
+    source: "falco"
