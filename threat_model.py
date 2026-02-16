@@ -27,3 +27,11 @@ app_to_db = Dataflow(web_app, db, "SQL Query")
 if __name__ == "__main__":
     # Standard method jo threats console par print karta hai
     tm.process()
+    # Console par report print karne ka desi lekin pakka tareeqa
+    print(f"# THREAT MODEL REPORT - BUILD")
+    print("## Identified Risks based on STRIDE")
+    for t in tm.threats:
+        print(f"### THREAT: {t.name}")
+        print(f"- Severity: {t.severity}")
+        print(f"- Description: {t.description}")
+        print(f"- Mitigation: {t.mitigation}\n")
