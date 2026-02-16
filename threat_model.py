@@ -30,4 +30,4 @@ app_to_db.protocol = "SQL"
 app_to_db.dstPort = 3306
 
 if __name__ == "__main__":
-    tm.process()
+    tm.report()
