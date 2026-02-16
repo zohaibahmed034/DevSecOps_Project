@@ -20,22 +20,15 @@ db = Datastore("Production MySQL Database")
 db.is_encrypted = True
 db.stores_pii = True
 
-# CORRECT SYNTAX: Using Dataflow class
-user_to_app = Dataflow(user, web_app, "HTTPS/TLS 1.3 Connection")
-user_to_app.protocol = "HTTPS"
-user_to_app.dstPort = 443
-
-app_to_db = Dataflow(web_app, db, "Encrypted SQL Query")
-app_to_db.protocol = "SQL"
-app_to_db.dstPort = 3306
+# Connections
+user_to_app = Dataflow(user, web_app, "HTTPS Connection")
+app_to_db = Dataflow(web_app, db, "SQL Query")
 
 if __name__ == "__main__":
-    # --- Yeh lines file ke aakhir mein honi chahiye ---
-if __name__ == "__main__":
-    # tm.process() default threats generate karta hai
+    # Execute threat analysis
     tm.process()
     
-    # Har threat ko print karne ke liye taake redirection (>) kaam kare
+    # Print the report for Jenkins to capture
     print(f"# Threat Model Report: {tm.name}")
     print(f"Description: {tm.description}\n")
     print("## Identified Threats")
