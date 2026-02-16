@@ -30,4 +30,17 @@ app_to_db.protocol = "SQL"
 app_to_db.dstPort = 3306
 
 if __name__ == "__main__":
-    tm.report()
+    # --- Yeh lines file ke aakhir mein honi chahiye ---
+if __name__ == "__main__":
+    # tm.process() default threats generate karta hai
+    tm.process()
+    
+    # Har threat ko print karne ke liye taake redirection (>) kaam kare
+    print(f"# Threat Model Report: {tm.name}")
+    print(f"Description: {tm.description}\n")
+    print("## Identified Threats")
+    for t in tm.threats:
+        print(f"### {t.name}")
+        print(f"- **Description:** {t.description}")
+        print(f"- **Severity:** {t.severity}")
+        print(f"- **Mitigation:** {t.mitigation}\n")
