@@ -25,15 +25,5 @@ user_to_app = Dataflow(user, web_app, "HTTPS Connection")
 app_to_db = Dataflow(web_app, db, "SQL Query")
 
 if __name__ == "__main__":
-    # Execute threat analysis
+    # Standard method jo threats console par print karta hai
     tm.process()
-    
-    # Print the report for Jenkins to capture
-    print(f"# Threat Model Report: {tm.name}")
-    print(f"Description: {tm.description}\n")
-    print("## Identified Threats")
-    for t in tm.threats:
-        print(f"### {t.name}")
-        print(f"- **Description:** {t.description}")
-        print(f"- **Severity:** {t.severity}")
-        print(f"- **Mitigation:** {t.mitigation}\n")
