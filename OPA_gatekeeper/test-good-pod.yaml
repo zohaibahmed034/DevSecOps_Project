@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pci-compliant-pod
+spec:
+  # Pod-level security context (NIST ko satisfy karne ke liye)
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 2000
+  containers:
+  - name: secure-container
+    image: alpine
+    command: ["sleep", "3600"]
+    # SOC2: Resource Limits
+    resources:
+      limits:
+        cpu: "200m"
+        memory: "128Mi"
+      requests:
+        cpu: "100m"
+        memory: "64Mi"
+    # Container-level security context (SOX aur PCI ko satisfy karne ke liye)
+    securityContext:
+      privileged: false
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities:
+        drop:
+          - ALL

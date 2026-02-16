@@ -1,0 +1,13 @@
+apiVersion: config.gatekeeper.sh/v1alpha1
+kind: Config
+metadata:
+  name: config
+  namespace: gatekeeper-system
+spec:
+  match:
+    - excludedNamespaces:
+        - gatekeeper-system
+        - kube-system
+        - devsecops  # Isse aapka Jenkins pipeline wala namespace bach jayega
+      processes:
+        - "*"

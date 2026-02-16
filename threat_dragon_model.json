@@ -1,0 +1,14 @@
+{
+  "project": {
+    "name": "Warfighter Project",
+    "description": "Regulated DevSecOps Infrastructure",
+    "threatModel": {
+      "diagrams": [
+        {
+          "title": "Main Architecture",
+          "diagramType": "STRIDE"
+        }
+      ]
+    }
+  }
+}
