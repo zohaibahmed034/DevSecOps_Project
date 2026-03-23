@@ -2,10 +2,8 @@ import json
 import os
 import sys
 
-# --- Configuration ---
-# 10 points for Critical, 7 for High, 4 for Medium, 1 for Low
+
 WEIGHTS = {"CRITICAL": 10, "HIGH": 7, "MEDIUM": 4, "LOW": 1}
-# Agar total score 50 se upar gaya to pipeline block ho jayegi
 THRESHOLD = 50 
 
 def get_findings(file_path):
