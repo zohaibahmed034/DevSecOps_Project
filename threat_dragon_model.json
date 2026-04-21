@@ -1,6 +1,6 @@
 {
   "project": {
-    "name": "Warfighter Project",
+    "name": "Devsecops Project",
     "description": "Regulated DevSecOps Infrastructure",
     "threatModel": {
       "diagrams": [
