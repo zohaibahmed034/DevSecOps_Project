@@ -30,7 +30,7 @@ if __name__ == "__main__":
     tm.process()
     
     # Custom Report Generation (Safe way)
-    print(f"# THREAT MODEL REPORT - WARFIGHTER PROJECT")
+    print(f"# THREAT MODEL REPORT - Devsecops PROJECT")
     print(f"**Description:** {tm.description}")
     print("\n## System Architecture Summary")
     print(f"- **Server:** {web_app.name}")
