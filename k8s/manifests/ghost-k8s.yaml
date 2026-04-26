@@ -1,41 +1,58 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: db
+  name: ghost
   namespace: default
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: mysql
+      app: ghost
   template:
     metadata:
       labels:
-        app: mysql
+        app: ghost
     spec:
       containers:
-      - name: mysql
-        image: zuhaibahmed034/mysql-devsecops:v1
+      - name: ghost
+        image: zuhaibahmed034/ghost-devsecops:v1
         ports:
-        - containerPort: 3306
+        - containerPort: 2368
         env:
-        - name: MYSQL_ROOT_PASSWORD
+        - name: database__client
+          value: "mysql"
+        - name: database__connection__host
+          value: "db"
+        - name: database__connection__user
           valueFrom:
             secretKeyRef:
               name: ghost-secrets
-              key: MYSQL_ROOT_PASSWORD
-        - name: MYSQL_DATABASE
+              key: MYSQL_USER
+        - name: database__connection__password
+          valueFrom:
+            secretKeyRef:
+              name: ghost-secrets
+              key: MYSQL_PASSWORD
+        - name: database__connection__database
           valueFrom:
             secretKeyRef:
               name: ghost-secrets
               key: MYSQL_DATABASE
+        - name: url
+          valueFrom:
+            secretKeyRef:
+              name: ghost-secrets
+              key: url
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: db
+  name: ghost-service
 spec:
+  type: NodePort
   ports:
-    - port: 3306
+    - port: 80
+      targetPort: 2368
+      nodePort: 30005
   selector:
-    app: mysql
+    app: ghost
