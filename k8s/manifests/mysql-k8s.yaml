@@ -2,7 +2,9 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: db
+  namespace: default
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app: mysql
@@ -21,17 +23,28 @@ spec:
           valueFrom:
             secretKeyRef:
               name: ghost-secrets
-              key: mysql-root-password
+              key: MYSQL_ROOT_PASSWORD
         - name: MYSQL_DATABASE
           valueFrom:
             secretKeyRef:
               name: ghost-secrets
-              key: mysql-database
+              key: MYSQL_DATABASE
+        - name: MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: ghost-secrets
+              key: MYSQL_USER
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ghost-secrets
+              key: MYSQL_PASSWORD
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: db
+  namespace: default
 spec:
   ports:
     - port: 3306
