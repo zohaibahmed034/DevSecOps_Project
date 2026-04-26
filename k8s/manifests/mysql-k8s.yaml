@@ -29,22 +29,11 @@ spec:
             secretKeyRef:
               name: ghost-secrets
               key: MYSQL_DATABASE
-        - name: MYSQL_USER
-          valueFrom:
-            secretKeyRef:
-              name: ghost-secrets
-              key: MYSQL_USER
-        - name: MYSQL_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: ghost-secrets
-              key: MYSQL_PASSWORD
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: db
-  namespace: default
 spec:
   ports:
     - port: 3306
