@@ -15,28 +15,26 @@ spec:
       containers:
       - name: ghost
         image: zuhaibahmed034/ghost-devsecops:v1
-        ports:
-        - containerPort: 2368
         env:
         - name: database__client
-          valueFrom:
-            configMapKeyRef:
-              name: ghost-config
-              key: database__client
+          value: "mysql"
         - name: database__connection__host
-          valueFrom:
-            configMapKeyRef:
-              name: ghost-config
-              key: database__connection__host
-        - name: database__connection__user
-          value: "root"
-        - name: database__connection__database
           valueFrom:
             secretKeyRef:
               name: ghost-secrets
-              key: mysql-database
+              key: database__connection__host # Matches key in Vault
+        - name: database__connection__user
+          valueFrom:
+            secretKeyRef:
+              name: ghost-secrets
+              key: database__connection__user # Matches key in Vault
         - name: database__connection__password
           valueFrom:
             secretKeyRef:
               name: ghost-secrets
-              key: mysql-root-password
+              key: database__connection__password # Matches key in Vault
+        - name: database__connection__database
+          valueFrom:
+            secretKeyRef:
+              name: ghost-secrets
+              key: database__connection__database # Matches key in Vault
