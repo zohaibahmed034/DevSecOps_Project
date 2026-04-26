@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ghost
+  namespace: default
 spec:
   replicas: 1
   selector:
@@ -15,26 +16,27 @@ spec:
       containers:
       - name: ghost
         image: zuhaibahmed034/ghost-devsecops:v1
+        ports:
+        - containerPort: 2368
         env:
         - name: database__client
           value: "mysql"
         - name: database__connection__host
-          valueFrom:
-            secretKeyRef:
-              name: ghost-secrets
-              key: database__connection__host # Matches key in Vault
+          value: "db"
         - name: database__connection__user
           valueFrom:
             secretKeyRef:
               name: ghost-secrets
-              key: database__connection__user # Matches key in Vault
+              key: MYSQL_USER
         - name: database__connection__password
           valueFrom:
             secretKeyRef:
               name: ghost-secrets
-              key: database__connection__password # Matches key in Vault
+              key: MYSQL_PASSWORD
         - name: database__connection__database
           valueFrom:
             secretKeyRef:
               name: ghost-secrets
-              key: database__connection__database # Matches key in Vault
+              key: MYSQL_DATABASE
+        - name: url
+          value: "http://18.61.57.80:32624" # Update this to your actual LoadBalancer/NodePort URL
