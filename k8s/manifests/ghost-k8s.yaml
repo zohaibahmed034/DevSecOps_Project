@@ -19,22 +19,22 @@ spec:
         - name: database__client
           value: "mysql"
         - name: database__connection__host
-          valueFrom:
+          envFrom:
             secretKeyRef:
               name: ghost-secrets
               key: database__connection__host # Matches key in Vault
         - name: database__connection__user
-          valueFrom:
+          envFrom:
             secretKeyRef:
               name: ghost-secrets
               key: database__connection__user # Matches key in Vault
         - name: database__connection__password
-          valueFrom:
+          envFrom:
             secretKeyRef:
               name: ghost-secrets
               key: database__connection__password # Matches key in Vault
         - name: database__connection__database
-          valueFrom:
+          envFrom:
             secretKeyRef:
               name: ghost-secrets
               key: database__connection__database # Matches key in Vault
