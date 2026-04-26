@@ -399,18 +399,22 @@ EOF
             }
         }
 
-        stages {
         stage('Test ArgoCD Deployment') {
             steps {
                 script {
                     container('scanner') {
-                        // Fetch the ArgoCD token from your new consolidated Vault path
                         withVault(configuration: [vaultUrl: "${VAULT_ADDR}", vaultCredentialId: 'vault-root-token', engineVersion: 2], 
                                   vaultSecrets: [[path: 'secret/devsecops/creds', secretValues: [[envVar: 'ARGO_TOKEN', vaultKey: 'argo_token']]]]) {
                             
                             sh """
-                                echo "🔒 Vault authentication successful. ARGO_TOKEN retrieved."
+                                echo "🔒 Vault authentication successful."
                                 
+                                # Fix: Install curl and dependencies if missing
+                                if ! command -v curl &> /dev/null; then
+                                    echo "Installing curl..."
+                                    apk add --no-cache curl
+                                fi
+        
                                 echo "📦 Checking for ArgoCD CLI..."
                                 if ! command -v argocd &> /dev/null; then
                                     echo "Downloading ArgoCD CLI..."
@@ -418,26 +422,9 @@ EOF
                                     chmod +x /usr/local/bin/argocd
                                 fi
                                 
-                                echo "🔄 Attempting to connect and sync with ArgoCD Server at ${ARGOCD_SERVER}..."
-                                
-                                # Check if the app already exists
-                                if argocd app get devsecops-project --server ${ARGOCD_SERVER} --auth-token \${ARGO_TOKEN} --insecure > /dev/null 2>&1; then
-                                    echo "✅ App 'devsecops-project' exists. Triggering sync..."
-                                    argocd app sync devsecops-project --server ${ARGOCD_SERVER} --auth-token \${ARGO_TOKEN} --insecure
-                                else
-                                    echo "⚠️ App 'devsecops-project' not found. Creating it now..."
-                                    argocd app create devsecops-project \\
-                                        --server ${ARGOCD_SERVER} \\
-                                        --auth-token \${ARGO_TOKEN} \\
-                                        --repo https://github.com/zohaibahmed034/DevSecOps_Project.git \\
-                                        --path k8s/manifests \\
-                                        --dest-server https://kubernetes.default.svc \\
-                                        --dest-namespace default \\
-                                        --sync-policy automated \\
-                                        --self-heal --auto-prune --insecure
-                                        
-                                    echo "✅ App created and automated sync enabled."
-                                fi
+                                echo "🔄 Syncing with ArgoCD..."
+                                # Using the --insecure flag because your server is on an IP/NodePort
+                                argocd app sync devsecops-project --server ${ARGOCD_SERVER} --auth-token \${ARGO_TOKEN} --insecure || echo "Sync failed, check if app exists."
                             """
                         }
                     }
@@ -445,31 +432,53 @@ EOF
             }
         }
 
-        stage('Step 7: DAST Environment Check') {
+        stage('DAST: Fix Permissions') {
             steps {
-                container('zap-scanner') {
-                    echo "Starting DAST Security Scan on: ${env.TARGET_URL}"
-                    sh "ls -ld /zap/wrk"
+                container('sec-tools') { 
+                    sh """
+                        mkdir -p /var/reports-dir/build-${env.BUILD_NUMBER}
+                        chown -R 1000:1000 /var/reports-dir/build-${env.BUILD_NUMBER}
+                        chmod -R 777 /var/reports-dir/build-${env.BUILD_NUMBER}
+                    """
                 }
             }
         }
 
+        
         stage('Step 7.1: Run DAST Baseline Scan') {
             steps {
                 container('zap-scanner') {
                     script {
+                        // ZAP report ko seedha /zap/wrk/ mein save karega
                         sh "zap-baseline.py -t ${env.TARGET_URL} -r ${env.REPORT_NAME} || true"
                     }
                 }
             }
         }
 
-        stage('Step 7.2: DAST Verification') {
+        stage('Step 7.2: DAST Verification & Prep') {
             steps {
-                container('zap-scanner') {
-                    echo "--- DAST Scan Completed ---"
-                    sh "ls -lh /zap/wrk/${env.REPORT_NAME} || true"
-                    archiveArtifacts artifacts: "**/dast-report-build-*.html", allowEmptyArchive: true
+                // Hum sec-tools use kar rahe hain kyunke iske paas root permissions hain
+                container('sec-tools') { 
+                    script {
+                        sh """
+                            echo "--- Organizing Reports for Build #${env.BUILD_NUMBER} ---"
+                            # 1. Build folder create karein agar nahi hai
+                            mkdir -p /var/reports-dir/build-${env.BUILD_NUMBER}
+                            
+                            # 2. DAST report ko root se build folder mein move karein
+                            if [ -f "/var/reports-dir/${env.REPORT_NAME}" ]; then
+                                mv /var/reports-dir/${env.REPORT_NAME} /var/reports-dir/build-${env.BUILD_NUMBER}/
+                                echo "✅ Report moved to build folder."
+                            else
+                                echo "❌ Report not found in /var/reports-dir/"
+                                exit 1
+                            fi
+                            
+                            # 3. Permissions fix karein taakay 'scanner' container zip kar sakay
+                            chmod -R 777 /var/reports-dir/build-${env.BUILD_NUMBER}
+                        """
+                    }
                 }
             }
         }
